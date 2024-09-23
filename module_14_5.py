@@ -8,6 +8,12 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import crud_functions_145 as crud_functions
 
+"""
+Перед запуском бота пополните вашу таблицу Products 4 или более записями для последующего вывода в чате Telegram-бота.
+Файлы module_14_5.py, crud_functions.py, а также файл с базой данных и таблицей Users 
+"""
+
+
 class UserState(StatesGroup):
     age = State()
     growth = State()
@@ -20,7 +26,7 @@ class RegistrationState(StatesGroup):
     balance = State()
 
 
-api = "6517651701:AAGRaBGr6aE29JvN345e7QX7Ept2_oXupZo"
+api = ""
 bot = Bot(token=api)
 dp = Dispatcher(bot, storage=MemoryStorage())
 kb = ReplyKeyboardMarkup([
@@ -82,31 +88,38 @@ async def set_age(call):
     await UserState.age.set()
     await call.answer()
 
-"""
-Фукнции цепочки состояний RegistrationState:
-sing_up(message):
-Оберните её в message_handler, который реагирует на текстовое сообщение 'Регистрация'.
-Эта функция должна выводить в Telegram-бот сообщение "Введите имя пользователя (только латинский алфавит):".
-После ожидать ввода возраста в атрибут RegistrationState.username при помощи метода set.
-set_username(message, state):
-Оберните её в message_handler, который реагирует на состояние RegistrationState.username.
-Функция должна выводить в Telegram-бот сообщение "Введите имя пользователя (только латинский алфавит):".
-Если пользователя message.text ещё нет в таблице, то должны обновляться данные в состоянии username на message.text. Далее выводится сообщение "Введите свой email:" и принимается новое состояние RegistrationState.email.
-Если пользователь с таким message.text есть в таблице, то выводить "Пользователь существует, введите другое имя" и запрашивать новое состояние для RegistrationState.username.
-set_email(message, state):
-Оберните её в message_handler, который реагирует на состояние RegistrationState.email.
-Эта функция должна обновляться данные в состоянии RegistrationState.email на message.text.
-Далее выводить сообщение "Введите свой возраст:":
-После ожидать ввода возраста в атрибут RegistrationState.age.
-set_age(message, state):
-Оберните её в message_handler, который реагирует на состояние RegistrationState.age.
-Эта функция должна обновляться данные в состоянии RegistrationState.age на message.text.
-Далее брать все данные (username, email и age) из состояния и записывать в таблицу Users при помощи ранее написанной crud-функции add_user.
-В конце завершать приём состояний при помощи метода finish().
-Перед запуском бота пополните вашу таблицу Products 4 или более записями для последующего вывода в чате Telegram-бота.
+@dp.message_handler(text=['Регистрация'])
+async def sing_up(message):
+    await message.answer("Введите имя пользователя (только латинский алфавит):")
+    await RegistrationState.username.set()
 
-Файлы module_14_5.py, crud_functions.py, а также файл с базой данных и таблицей Users 
-"""
+@dp.message_handler(state=RegistrationState.username)
+async def set_username(message, state):
+    username = message.text
+    if crud_functions.is_included(username):
+        await message.answer(f"Пользователь {username} уже существует!")
+        await message.answer("Введите имя пользователя (только латинский алфавит):")
+        await RegistrationState.username.set()
+    else:
+        await state.update_data(username=message.text)
+        data = await state.get_data()
+        await message.answer("Введите email пользователя:")
+        await RegistrationState.email.set()
+
+@dp.message_handler(state=RegistrationState.email)
+async def set_email(message, state):
+    await state.update_data(email=message.text)
+    data = await state.get_data()
+    await message.answer("Введите возраст пользователя:")
+    await RegistrationState.age.set()
+
+@dp.message_handler(state=RegistrationState.age)
+async def set_age(message, state):
+    await state.update_data(age=message.text)
+    data = await state.get_data()
+    crud_functions.add_user(data['username'], data['email'], data['age'])
+    await message.answer(f"Пользователь {data['username']} {data['email']} {data['age']} добавлен.", reply_markup=kb)
+    await state.finish()
 
 @dp.message_handler(text=['Информация'])
 async def info(message):
