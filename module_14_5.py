@@ -6,12 +6,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher import FSMContext
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-import crud_functions_145 as crud_functions
-
-"""
-Перед запуском бота пополните вашу таблицу Products 4 или более записями для последующего вывода в чате Telegram-бота.
-Файлы module_14_5.py, crud_functions.py, а также файл с базой данных и таблицей Users 
-"""
+import crud_functions
 
 
 class UserState(StatesGroup):
